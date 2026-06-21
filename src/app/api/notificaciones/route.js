@@ -38,16 +38,18 @@ export async function POST(request) {
 
     // Check if phone number is present
     if (!client.telefono || !client.telefono.trim()) {
-      return NextResponse.json({ 
-        error: "El cliente no tiene un número de teléfono registrado. Edita su información e ingresa uno primero." 
+      return NextResponse.json({
+        error: "El cliente no tiene un número de teléfono registrado. Edita su información e ingresa uno primero."
       }, { status: 400 });
     }
 
     // 3. Get Webhook URL
     const n8nUrl = process.env.N8N_WEBHOOK_URL;
+    console.log("N8N_WEBHOOK_URL value:", n8nUrl);
+    console.log("All env keys:", Object.keys(process.env).filter(k => k.includes('N8N')));
     if (!n8nUrl) {
-      return NextResponse.json({ 
-        error: "La variable N8N_WEBHOOK_URL no está configurada en el servidor (.env.local)." 
+      return NextResponse.json({
+        error: `N8N_WEBHOOK_URL no configurada. Vars disponibles: ${Object.keys(process.env).filter(k => k.includes('N8N')).join(', ')}`
       }, { status: 500 });
     }
 
@@ -75,8 +77,8 @@ export async function POST(request) {
     if (!response.ok) {
       const responseText = await response.text();
       console.error(`n8n webhook failed: ${response.status} - ${responseText}`);
-      return NextResponse.json({ 
-        error: `El servidor n8n respondió con error (${response.status}). Verifique la conexión.` 
+      return NextResponse.json({
+        error: `El servidor n8n respondió con error (${response.status}). Verifique la conexión.`
       }, { status: 502 });
     }
 
