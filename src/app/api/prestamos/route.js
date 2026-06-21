@@ -45,7 +45,7 @@ export async function GET(request) {
     if (dias_min_str) {
       const dias_min = parseInt(dias_min_str);
       if (!isNaN(dias_min)) {
-        whereClause.push(`GREATEST(0, EXTRACT(DAY FROM (CURRENT_DATE - p.fecha_proximo_pago)))::int >= $${paramIndex}`);
+        whereClause.push(`GREATEST(0, (CURRENT_DATE - p.fecha_proximo_pago::date)) >= $${paramIndex}`);
         params.push(dias_min);
         paramIndex++;
       }
@@ -76,7 +76,7 @@ export async function GET(request) {
         p.monto_aprobado, p.balance_pendiente, p.cuota_mensual, 
         p.fecha_proximo_pago, p.estado, p.tipo_frecuencia, 
         p.total_cuotas, p.created_at, p.metodo_desembolso, p.banco_nombre, p.numero_cuenta,
-        GREATEST(0, EXTRACT(DAY FROM (CURRENT_DATE - p.fecha_proximo_pago)))::int AS dias_atraso_calc
+        GREATEST(0, (CURRENT_DATE - p.fecha_proximo_pago::date)) AS dias_atraso_calc
       FROM prestamos p
       LEFT JOIN clientes c ON p.cedula = c.cedula
       ${whereSql}
@@ -106,12 +106,12 @@ export async function POST(request) {
     const registradoPor = user ? user.nombre : 'Sistema';
 
     const body = await request.json();
-    const {
-      cedula,
-      monto_aprobado,
-      frecuencia,
-      total_cuotas,
-      fecha_inicio,
+    const { 
+      cedula, 
+      monto_aprobado, 
+      frecuencia, 
+      total_cuotas, 
+      fecha_inicio, 
       tasa_interes,
       metodo_desembolso,
       banco_nombre,
@@ -119,11 +119,11 @@ export async function POST(request) {
     } = body;
 
     if (!cedula) return NextResponse.json({ error: "Cédula es requerida." }, { status: 400 });
-
+    
     // Check client exists
     const checkClient = await query("SELECT nombre FROM clientes WHERE cedula = $1", [cedula]);
     if (checkClient.rows.length === 0) {
-      return NextResponse.json({ error: "Cliente no encontrado." }, { status: 404 });
+       return NextResponse.json({ error: "Cliente no encontrado." }, { status: 404 });
     }
 
     const monto = parseFloat(monto_aprobado);
@@ -155,7 +155,7 @@ export async function POST(request) {
       "SELECT numero_prestamo FROM prestamos WHERE numero_prestamo LIKE $1 ORDER BY numero_prestamo DESC LIMIT 1",
       [`${yearPrefix}%`]
     );
-
+    
     let nextNumber = 1;
     if (lastLoanRes.rows.length > 0) {
       const parts = lastLoanRes.rows[0].numero_prestamo.split('-');
@@ -166,7 +166,7 @@ export async function POST(request) {
     // Generate Cuotas Calendar
     const fInicio = fecha_inicio ? new Date(fecha_inicio) : new Date();
     const calendario = generarCalendarioCuotas(monto, interes, cuotasNum, frecuencia || 'mensual', fInicio);
-
+    
     const cuotaMensualEstimada = calendario[0].monto_cuota;
     const fechaProximoPago = calendario[0].fecha_vencimiento.toISOString().split('T')[0];
     const balanceTotal = calendario.reduce((sum, c) => sum + c.monto_cuota, 0);
@@ -181,7 +181,7 @@ export async function POST(request) {
 
     // Transaction
     await query('BEGIN');
-
+    
     await query(`
       INSERT INTO prestamos (
         cedula, numero_prestamo, monto_aprobado, balance_pendiente, cuota_mensual,
@@ -221,18 +221,18 @@ export async function POST(request) {
         tabla: 'prestamos',
         accion: 'INSERT',
         registro_id: generatedLoanNumber,
-        datos_nuevos: {
-          cedula,
-          monto_aprobado,
-          frecuencia,
-          total_cuotas,
-          metodo_desembolso: metodo_desembolso || 'efectivo',
-          banco_nombre: banco_nombre || null,
-          numero_cuenta: numero_cuenta || null
+        datos_nuevos: { 
+          cedula, 
+          monto_aprobado, 
+          frecuencia, 
+          total_cuotas, 
+          metodo_desembolso: metodo_desembolso || 'efectivo', 
+          banco_nombre: banco_nombre || null, 
+          numero_cuenta: numero_cuenta || null 
         },
         usuario: user
       });
-    } catch (e) { }
+    } catch (e) {}
 
     return NextResponse.json({
       success: true,
