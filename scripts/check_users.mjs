@@ -12,8 +12,8 @@ async function checkAndResetUsers() {
     console.log('\n=== VERIFICANDO USUARIOS EN LA BD ===\n');
 
     // List all users
-    const users = await pool.query('SELECT id, username, nombre, rol, password_hash FROM usuarios');
-    
+    const users = await pool.query('SELECT id, username, nombre, rol, password_hash FROM usuarios')
+
     if (users.rows.length === 0) {
       console.log('⚠️  No hay usuarios en la base de datos. Creando admin...');
     } else {
@@ -33,7 +33,7 @@ async function checkAndResetUsers() {
     const newHash = await bcrypt.hash(NEW_PASSWORD, 10);
 
     const existing = await pool.query("SELECT id FROM usuarios WHERE username = 'admin'");
-    
+
     if (existing.rows.length > 0) {
       await pool.query(
         "UPDATE usuarios SET password_hash = $1 WHERE username = 'admin'",
