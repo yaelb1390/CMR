@@ -75,13 +75,15 @@ export async function GET(request) {
       SELECT 
         p.id, p.cedula, c.nombre as nombre_cliente, p.numero_prestamo, 
         p.monto_aprobado, p.balance_pendiente, p.cuota_mensual, 
-        p.fecha_proximo_pago, p.estado, p.tipo_frecuencia, 
-        p.total_cuotas, p.created_at, p.metodo_desembolso, p.banco_nombre, p.numero_cuenta,
-        GREATEST(0, (CURRENT_DATE - p.fecha_proximo_pago::date)) AS dias_atraso_calc
+        p.fecha_proximo_pago, p.estado, p.tipo_frecuencia, p.tasa_interes,
+        p.total_cuotas, p.cuotas_pagadas, p.created_at, 
+        p.metodo_desembolso, p.banco_nombre, p.numero_cuenta,
+        GREATEST(0, (CURRENT_DATE - p.fecha_proximo_pago::date)) AS dias_atraso_calc,
+        ROUND((p.monto_aprobado * (1 + COALESCE(p.tasa_interes, 0)))::numeric, 2) AS monto_total_original
       FROM prestamos p
       LEFT JOIN clientes c ON p.cedula = c.cedula
       ${whereSql}
-      ORDER BY dias_atraso_calc DESC, p.fecha_proximo_pago ASC
+      ORDER BY dias_atraso_calc DESC NULLS LAST, p.fecha_proximo_pago ASC NULLS LAST
     `;
 
     const res = await query(sql, params);
@@ -92,7 +94,10 @@ export async function GET(request) {
         monto_aprobado: parseFloat(row.monto_aprobado),
         balance_pendiente: parseFloat(row.balance_pendiente),
         cuota_mensual: parseFloat(row.cuota_mensual),
-        dias_atraso: parseInt(row.dias_atraso_calc)
+        tasa_interes: parseFloat(row.tasa_interes) || 0,
+        monto_total_original: parseFloat(row.monto_total_original) || parseFloat(row.balance_pendiente),
+        cuotas_pagadas: parseInt(row.cuotas_pagadas) || 0,
+        dias_atraso: parseInt(row.dias_atraso_calc) || 0
       }))
     });
   } catch (err) {

@@ -206,7 +206,7 @@ function PrestamosContent() {
       monto_aprobado: loan.monto_aprobado.toString(),
       frecuencia: loan.tipo_frecuencia || 'mensual',
       total_cuotas: loan.total_cuotas.toString(),
-      tasa_interes: loan.tasa_interes ? (parseFloat(loan.tasa_interes) * 100).toString() : '5',
+      tasa_interes: loan.tasa_interes ? (parseFloat(loan.tasa_interes) * 100).toFixed(2) : '5',
       fecha_inicio: loan.created_at ? new Date(loan.created_at).toISOString().split('T')[0] : new Date().toISOString().split('T')[0],
       metodo_desembolso: loan.metodo_desembolso || 'efectivo',
       banco_nombre: loan.banco_nombre || '',
@@ -326,7 +326,7 @@ function PrestamosContent() {
             <option value="">Todos</option>
             <option value="activo">Activo</option>
             <option value="atrasado">Atrasado</option>
-            <option value="pagado">Pagado</option>
+            {currentUser?.rol === 'admin' && <option value="pagado">Pagado</option>}
           </select>
         </div>
         <div className="filter-item" style={{ width: '160px' }}>
@@ -371,7 +371,6 @@ function PrestamosContent() {
               </thead>
               <tbody>
                 {loans.map((loan) => {
-                  const totalConInteres = parseFloat(loan.monto_aprobado) + (parseFloat(loan.monto_interes) || 0);
                   return (
                     <tr key={loan.id}>
                       <td style={{ fontWeight: 600 }}>{loan.nombre_cliente}</td>
@@ -394,7 +393,7 @@ function PrestamosContent() {
                       </td>
                       <td>{formatCurrency(loan.monto_aprobado)}</td>
                       <td style={{ fontWeight: '600' }}>
-                        {formatCurrency(totalConInteres > loan.monto_aprobado ? totalConInteres : loan.balance_pendiente)}
+                        {formatCurrency(loan.monto_total_original)}
                       </td>
                       <td style={{ fontWeight: 700, color: loan.balance_pendiente === 0 ? 'var(--secondary)' : 'inherit' }}>
                         {formatCurrency(loan.balance_pendiente)}
