@@ -65,7 +65,8 @@ export async function GET(request) {
 
     const user = await getCurrentUser(request);
     if (user && user.rol !== 'admin') {
-      whereClause.push(`(p.estado = 'atrasado' OR p.fecha_proximo_pago <= CURRENT_DATE + INTERVAL '5 days')`);
+      // Colaboradores ven todos los préstamos activos y atrasados (no los ya pagados)
+      whereClause.push(`p.estado != 'pagado'`);
     }
 
     const whereSql = whereClause.length > 0 ? `WHERE ${whereClause.join(' AND ')}` : '';

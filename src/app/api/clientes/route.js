@@ -50,10 +50,11 @@ export async function GET(request) {
 
     const user = await getCurrentUser(request);
     if (user && user.rol !== 'admin') {
+      // Colaboradores ven clientes con préstamos activos o atrasados (no pagados)
       whereClause.push(`
         cedula IN (
           SELECT cedula FROM prestamos 
-          WHERE estado = 'atrasado' OR fecha_proximo_pago <= CURRENT_DATE + INTERVAL '5 days'
+          WHERE estado != 'pagado'
         )
       `);
     }
