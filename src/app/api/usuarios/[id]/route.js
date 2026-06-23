@@ -48,6 +48,14 @@ export async function DELETE(request, { params }) {
       return NextResponse.json({ error: "Usuario no encontrado" }, { status: 404 });
     }
 
+    // Protección: no permitir eliminar el último administrador
+    if (check.rows[0].rol === 'admin') {
+      const adminCount = await query("SELECT COUNT(*) as cnt FROM usuarios WHERE rol = 'admin'");
+      if (parseInt(adminCount.rows[0].cnt) <= 1) {
+        return NextResponse.json({ error: "No se puede eliminar el único administrador del sistema." }, { status: 400 });
+      }
+    }
+
     await query("DELETE FROM usuarios WHERE id = $1", [id]);
     return NextResponse.json({ success: true });
   } catch (err) {

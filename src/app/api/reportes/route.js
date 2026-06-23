@@ -22,12 +22,14 @@ export async function GET(request) {
     
     const riskMetrics = riskQuery.rows[0];
 
-    // Detail lists for Mora
+    // Detail lists for Mora (JOIN clientes para obtener nombre_cliente)
     const listMoraQuery = await query(`
-      SELECT cedula, nombre_cliente, numero_prestamo, balance_pendiente, cuota_mensual, dias_atraso, estado
-      FROM prestamos
-      WHERE dias_atraso > 0 AND balance_pendiente > 0
-      ORDER BY dias_atraso DESC
+      SELECT p.cedula, c.nombre AS nombre_cliente, p.numero_prestamo, 
+             p.balance_pendiente, p.cuota_mensual, p.dias_atraso, p.estado
+      FROM prestamos p
+      LEFT JOIN clientes c ON p.cedula = c.cedula
+      WHERE p.dias_atraso > 0 AND p.balance_pendiente > 0
+      ORDER BY p.dias_atraso DESC
     `);
 
     // 2. Cobros por periodo (Pagos)

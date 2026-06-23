@@ -17,7 +17,7 @@ export async function POST() {
   try {
     // 1. Traer todos los préstamos que aún tienen balance pendiente
     const prestamosRes = await query(`
-      SELECT numero_prestamo, fecha_proximo_pago, estado, tipo_frecuencia
+      SELECT numero_prestamo, fecha_proximo_pago, estado, tipo_frecuencia, dias_atraso
       FROM prestamos
       WHERE estado IN ('activo', 'atrasado') AND balance_pendiente > 0
     `);

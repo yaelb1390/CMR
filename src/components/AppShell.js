@@ -319,9 +319,26 @@ export default function AppShell({ children }) {
               <p style={{ color: 'var(--text-muted)', fontSize: '14px', lineHeight: '1.5' }}>
                 No tienes privilegios asignados para acceder al módulo de <b>{requiredPerm === 'prestamos' ? 'Préstamos' : requiredPerm === 'auditoria' ? 'Auditoría' : requiredPerm === 'configuracion' ? 'Configuración' : requiredPerm === 'usuarios' ? 'Usuarios' : requiredPerm === 'reportes' ? 'Reportes' : requiredPerm}</b>. Por favor, solicita acceso a un administrador.
               </p>
-              <button className="btn btn-primary" onClick={() => router.push('/clientes')}>
-                Ir al CRM Clientes
-              </button>
+              {(() => {
+                const allRoutes = [
+                  { perm: 'dashboard', path: '/dashboard' },
+                  { perm: 'clientes', path: '/clientes' },
+                  { perm: 'cobros', path: '/cobros' },
+                  { perm: 'recordatorios', path: '/recordatorios' },
+                  { perm: 'prestamos', path: '/prestamos' },
+                  { perm: 'reportes', path: '/reportes' },
+                ];
+                const firstAvailable = allRoutes.find(r => hasPermission(r.perm));
+                return firstAvailable ? (
+                  <button className="btn btn-primary" onClick={() => router.push(firstAvailable.path)}>
+                    Ir a {firstAvailable.perm.charAt(0).toUpperCase() + firstAvailable.perm.slice(1)}
+                  </button>
+                ) : (
+                  <button className="btn btn-primary" onClick={handleLogout}>
+                    Cerrar Sesión
+                  </button>
+                );
+              })()}
             </div>
           )}
         </main>

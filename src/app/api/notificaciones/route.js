@@ -24,9 +24,15 @@ export async function POST(request) {
       return NextResponse.json({ error: "Cédula y tipo de notificación son requeridos." }, { status: 400 });
     }
 
-    // 2. Fetch client details
+    // 2. Fetch client + loan details (JOIN clientes para obtener nombre, telefono y direccion)
     const clientRes = await query(
-      "SELECT cedula, nombre_cliente, numero_prestamo, cuota_mensual, balance_pendiente, dias_atraso, telefono, direccion FROM prestamos WHERE cedula = $1",
+      `SELECT p.cedula, c.nombre AS nombre_cliente, p.numero_prestamo, 
+              p.cuota_mensual, p.balance_pendiente, p.dias_atraso, 
+              c.telefono, c.direccion 
+       FROM prestamos p
+       LEFT JOIN clientes c ON p.cedula = c.cedula
+       WHERE p.cedula = $1 AND p.estado != 'pagado'
+       ORDER BY p.created_at DESC LIMIT 1`,
       [cedula]
     );
 
